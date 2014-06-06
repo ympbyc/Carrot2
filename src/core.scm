@@ -7,7 +7,8 @@
 (use to-js)
 
 (define (main args)
-  (let ([heap (sexprs->carrot-expr (read-from-string (cadr args)))])
+  (let ([heap (sexprs->carrot-expr (read))])
+    (print (ref heap 'main))
     (format #t "Correctly Typed: ~S\n" (check-program heap))
     (newline)
     (display ";;=> ")

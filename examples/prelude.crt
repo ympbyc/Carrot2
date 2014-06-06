@@ -1,0 +1,28 @@
+[
+ (synonym Pair (lambda [a b] `(Fn (Fn ,a ,b c) c)))
+
+ (= (pair a b (Pair a b))
+    x y f (f x y))
+
+ (= (fst (Pair a b) a)
+    p (p (^ x y x)))
+
+ (= (snd (Pair a b) b)
+    p (p (^ x y y)))
+
+
+ (synonym List (lambda [a] `(Fn (Fn ,a xs c) c)))
+
+ (= (cons a (List a) (List a))
+    x xs f (f x xs))
+
+ (= (nil (Fn a xs c) Kw) f :nil)
+
+ (= (car (List a) a)
+    xs (xs (^ y ys y)))
+
+ (= (cdr (List a) (List a))
+    xs (xs (^ y ys ys)))
+
+ (= (main Num) (car (cons 1 (cons 2 nil))))
+]
