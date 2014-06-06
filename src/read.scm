@@ -23,9 +23,8 @@
   (define (sexprs->carrot-expr sexprs)
     ;;(= (name T1 T2 U) x y e)
     (cond [(null? sexprs)
-           (begin (hash-table-for-each *gen-function-type-heap*
-                                       (lambda [k v] (str k v)))
-                  (ref *function-heap* 'main))]
+           (list (ref *function-heap* 'main)
+                 *function-heap*)]
 
           [(synonym-definition? (car sexprs))
            (register-synonym! (car sexprs) *synonyms*)
@@ -76,7 +75,6 @@
 
       (if (member name *generic-names*)
           (add-method! (ref *gen-function-type-heap* name) fn-expr)
-
           (hash-table-put! *function-heap* name fn-expr))))
 
 
@@ -103,7 +101,7 @@
           [type-out (synonym-expand (last signature))])
       (if (and (pair? type-out) (eq? (car type-out) 'Fn))
           (flatten-signature (cons 'Fn (append type-ins (cdr type-out))))
-          signature)))
+          (cons 'Fn (append type-ins (list type-out))))))
 
 
   (define (make-function-type signature)
@@ -166,12 +164,24 @@
                     :expr expr
                     :type self-type)])]
      [(and (pair? expr) (eq? '^ (car expr)))
-      (make <crt-function>
-        :params (butlast (cdr expr))
-        :expr   (last expr)
-        :type   (map (lambda [_] gensym "tvar") (cdr expr)))]
+      (make-lambda expr params self-type)]
      [(pair? expr)
       (make-app-expr expr params self-type)]))
+
+
+  (define (make-lambda expr env self-type)
+    (let* ([params (butlast (cdr expr))]
+           [param-ts (map (lambda [_] (make <crt-type-var>
+                                        :id (gensym "tvar")))
+                          params)]
+           [expr (make-expr (last expr) (append (zip params param-ts) env) self-type)])
+      (make <crt-function>
+        :params params
+        :expr   expr
+        :type   (make <crt-function-type>
+                  :param-types param-ts
+                  :return-type (get-type expr)
+                  :arity (length params)))))
 
 
   (define (select-method gen-fn args params self-type)

@@ -25,4 +25,5 @@
     x)
 
 
-  )
+  (define (raise-error/message x)
+    (raise (condition (<error> (message x))))))
