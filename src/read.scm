@@ -84,17 +84,27 @@
     (let* ([methods  (get-methods gen-fn)]
            [fn-t     (get-type fn-expr)]
            [param-ts (get-param-types fn-t)])
-      (slot-set! gen-fn 'methods
-                 (acons param-ts fn-expr methods))))
+      (set! (get-methods gen-fn)
+            (acons param-ts fn-expr methods))))
 
 
+  (define (synonym-expand t)
+    (if (pair? t)
+        (let1 alias (hash-table-get *synonyms* (car t) #f)
+              (cond [(and alias (closure? alias))
+                     (apply alias (cdr t))]
+                    [alias alias]
+                    [else t]))
+        (let1 alias (hash-table-get *synonyms* t #f)
+              (if alias alias t))))
 
   (define (flatten-signature signature)
-    (let ([type-ins (butlast (cdr signature))]
-          [type-out (last signature)])
+    (let ([type-ins (map synonym-expand (butlast (cdr signature)))]
+          [type-out (synonym-expand (last signature))])
       (if (and (pair? type-out) (eq? (car type-out) 'Fn))
-          (flatten-signature (cons 'Fn (concat type-ins (cdr type-out))))
+          (flatten-signature (cons 'Fn (append type-ins (cdr type-out))))
           signature)))
+
 
   (define (make-function-type signature)
     (let* ([signature (flatten-signature signature)]
@@ -117,22 +127,15 @@
       [(Keyword Kw)
        (make <crt-keyword-type>)]
       [(Symbol Sym)
-       (let1 alias (hash-table-get *synonyms* x #f)
-             (if alias (make-unknown-crt-type alias)
-                 (make <crt-symbol-type>)))]
+       (make <crt-symbol-type>)]
       [else
        (cond [(is-a? x <crt-type>) x]
              [(and (pair? x) (eq? 'Fn (car x)))
               (make-function-type x)]
              [(pair? x)
-              (let1 (hash-table-get *synonyms* x #f)
-                    (cond [(and alias (closure? alias))
-                           (make-unknown-crt-type (apply alias (cdr x)))]
-                          [alias (make-unknown-crt-type alias)]
-                          [else
-                           (make <crt-composite-type>
-                             :container (car x)
-                             :content-types (map make-unknown-crt-type (cdr x)))]))]
+              (make <crt-composite-type>
+                :container (car x)
+                :content-types (map make-unknown-crt-type (cdr x)))]
              [else (make <crt-type-var> :id x)])]))
 
 
@@ -171,26 +174,36 @@
       (make-app-expr expr params self-type)]))
 
 
+  (define (select-method gen-fn args params self-type)
+    (let* ([arity    (get-arity (get-type gen-fn))]
+           [operand-ts
+            (map (compose get-type (cut make-expr <> params self-type))
+                 (take args arity))]
+           [method   (assoc operand-ts (get-methods gen-fn))])
+      (if method
+          (make-expr (cons (cdr method) args) params self-type)
+          (lambda [xs]
+            ;;dispaatch on parametric type
+            (select-method gen-fn xs params self-type)))))
+
+
+
   (define (make-app-expr expr params self-type)
     (let1 left (make-expr (car expr) params self-type)
           (cond
            [(is-a? left <crt-generic-function>)
-            (let* ([arity    (get-arity (get-type left))]
-                   [operand-ts
-                    (map (compose get-type (cut make-expr <> params self-type))
-                         (take (cdr expr) arity))]
-                   [method   (cdr (assoc operand-ts (get-methods left)))])
-              (make-expr (cons method (cdr expr)) params self-type))]
+            (select-method left (cdr expr) params self-type)]
+           [(closure? (get-expr left))
+            ((get-expr left) (cdr expr))]
            [(> (length expr) 1)
             (let* ([operator-expr (make-expr (butlast expr) params self-type)]
                    [operand-expr  (make-expr (last expr) params self-type)])
               (make <crt-app>
                 :operator operator-expr
                 :operand  operand-expr
-                :expr     expr
+                :expr     '() ;expr
                 :type     (get-partial-return-type (get-type operator-expr) 1)))]
            [else left])))
-
 
 
 

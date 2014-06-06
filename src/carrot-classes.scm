@@ -89,10 +89,7 @@
      [ret-t :accessor            get-return-type
             :init-keyword        :return-type]
      [param-ts :accessor         get-param-types
-               :init-keyword     :param-types]
-     [instanciator :accessor     get-instanciator
-                   :init-value   (lambda [self . _] self)
-                   :init-keyword :instanciator]))
+               :init-keyword     :param-types]))
 
   (define-class <crt-generic-function-type> (<crt-function-type>) ())
 
