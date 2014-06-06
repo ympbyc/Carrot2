@@ -56,7 +56,7 @@
         (get-expr f)
         (make <crt-function>
           :expr (get-expr f)
-          :name '--partial
+          :name '__partial
           :params (cdr (get-params f))
           :type (get-partial-return-type (get-type f) 1))))
 

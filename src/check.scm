@@ -1,5 +1,5 @@
 (define-module check
-  (export check-expr set-function-heap!)
+  (export check-program)
   (use srfi-1)
   (use util)
   (use carrot-classes)
@@ -7,8 +7,9 @@
 
   (define *function-heap* (make-hash-table 'eq?))
 
-  (define (set-function-heap! heap)
-    (set! *function-heap* heap))
+  (define (check-program heap)
+    (set! *function-heap* heap)
+    (check-expr (ref heap 'main) '()))
 
   (define-method check-expr [(expr <crt-function>) binding]
     (let ([ret-t  (get-return-type (get-type expr))]

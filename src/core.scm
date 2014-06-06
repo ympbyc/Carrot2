@@ -1,13 +1,15 @@
 (add-load-path "." :relative)
+(add-load-path "./compilers" :relative)
 
 (use carrot-classes)
 (use read)
 (use check)
+(use to-js)
 
 (define (main args)
-  (let* ([xs (sexprs->carrot-expr (read-from-string (cadr args)))]
-         [main (car xs)]
-         [heap (cadr xs)])
-    (set-function-heap! heap)
-    (format #t "Correctly Typed: ~S\n" (check-expr main '()))
-    (print main)))
+  (let ([heap (sexprs->carrot-expr (read-from-string (cadr args)))])
+    (format #t "Correctly Typed: ~S\n" (check-program heap))
+    (newline)
+    (display ";;=> ")
+    (flush)
+    (sys-exec "node" (list "" "-p" (compile heap)))))

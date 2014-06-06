@@ -23,8 +23,7 @@
   (define (sexprs->carrot-expr sexprs)
     ;;(= (name T1 T2 U) x y e)
     (cond [(null? sexprs)
-           (list (ref *function-heap* 'main)
-                 *function-heap*)]
+           *function-heap*]
 
           [(synonym-definition? (car sexprs))
            (register-synonym! (car sexprs) *synonyms*)
