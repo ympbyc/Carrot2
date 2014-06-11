@@ -11,19 +11,24 @@
 
 
   (define-method compile-expr [(expr <crt-function>)]
-    (format "function ~A (~A) { return ~A; }"
-            (get-name expr)
-            (car (get-params expr))
-            (compile-expr (get-partial-function expr))))
+    (if (null? (get-params expr))
+        (format "~A" (compile-expr (get-expr expr)))
+        (format "function ~A (~A) { return ~A; }"
+                (to-valid-id (get-name expr))
+                (car (get-params expr))
+                (compile-expr (get-partial-function expr)))))
 
 
   (define-method compile-expr [(expr <crt-app>)]
     (format "(~A)(~A)"
             (compile-expr (get-operator expr))
-            (compile-expr (get-operand expr))))
+            (thunk (compile-expr (get-operand expr)))))
+
+  (define-method compile-expr [(expr <crt-local-ref>)]
+    (format "~A()" (to-valid-id (get-expr expr))))
 
   (define-method compile-expr [(expr <crt-ref>)]
-    (format "~A" (get-expr expr)))
+    (format "~A" (to-valid-id (get-expr expr))))
 
   (define-method compile-expr [(expr <crt-literal>)]
     (compile-literal (get-expr expr) (get-type expr)))
@@ -43,4 +48,32 @@
     (format "':~A'" x))
 
   (define-method compile-literal [x (_ <crt-char-type>)]
-    (format "'~A'" x)))
+    (format "'~A'" x))
+
+  (define-method compile-literal [x (_ <crt-any-type>)]
+    (format "{}"))
+
+
+  (define (thunk expr)
+    (format "function () { return ~A; }" expr))
+
+
+  (define (replace-incompatible-chars str)
+    (let* ([str (regexp-replace-all #/-/ str "_")]
+           [str (regexp-replace-all #/!/ str "_BANG_")]
+           [str (regexp-replace-all #/\?/ str "_Q_")]
+           [str (regexp-replace-all #/\*/ str "_STAR_")]
+           [str (regexp-replace-all #/</ str "_LT_")]
+           [str (regexp-replace-all #/>/ str "_GT_")]
+           [str (regexp-replace-all #/\// str "_SLASH_")]
+           [str (regexp-replace-all #/\+/ str "_SUM_")]
+           [str (regexp-replace-all #/=/ str "_EQ_")]
+           [str (regexp-replace-all #/%/ str "_PERC_")]
+           [str (regexp-replace-all #/^false$/ str "_FALSE_")]
+           [str (regexp-replace-all #/^true$/ str "_TRUE_")]
+           [str (regexp-replace-all #/^if$/ str "_IF_")]
+           [str (regexp-replace-all #/^delete$/ str "_DELETE_")])))
+
+
+    (define (to-valid-id s)
+      (replace-incompatible-chars (symbol->string s))))

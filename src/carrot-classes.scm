@@ -37,6 +37,8 @@
 
   (define-class <crt-external-ref> (<crt-ref>) ())
 
+  (define-class <crt-self-ref> (<crt-external-ref>) ())
+
   (define-class <crt-app> (<crt-expr>)
     ([operator :accessor get-operator
                :init-keyword :operator]
@@ -72,6 +74,8 @@
 ;;; Type ;;;
 
   (define-class <crt-type> (<human-readable>) ())
+
+  (define-class <crt-any-type> (<crt-type>) ())
 
   (define-class <crt-primitive-type> (<crt-type>) ())
   (define-class <crt-string-type> (<crt-primitive-type>) ())

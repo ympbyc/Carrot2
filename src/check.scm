@@ -32,13 +32,18 @@
   (define-method prim-match? [(t <crt-symbol-type>) (u <symbol>)] #t)
   (define-method prim-match? [(t <crt-keyword-type>) (u <keyword>)] #t)
   (define-method prim-match? [(t <crt-char-type>) (u <char>)] #t)
-  (define-method prim-match? [_ _] #f)
+  (define-method prim-match? [(t <crt-any-type>) u] #t)
+  (define-method prim-match? [t u]
+    (format #t "PRIM MISMATCH: ~S -><- ~S" t u)
+    #f)
 
 
   (define-method check-expr [(expr <crt-literal>) _]
     (prim-match? (get-type expr) (get-expr expr)))
 
   (define-method check-expr [(expr <crt-local-ref>) _] #t)
+
+  (define-method check-expr [(expr <crt-self-ref>) _] #t)
 
   (define-method check-expr [(expr <crt-external-ref>) binding]
     (check-expr (ref *function-heap* (get-expr expr)) binding))
@@ -64,7 +69,7 @@
     (let ([b1 (assoc t binding)]
           [b2 (assoc u binding)])
       (if (and b1 b2 (not (equal? (cdr b1) (cdr b2))))
-          (raise-error/message "~S -><- ~S" (cdr b1) (cdr b2))
+          (raise-error/message (format "~S -><- ~S" (cdr b1) (cdr b2)))
           '())))
 
   (define-method unify- [(t <crt-type-var>) u binding]
@@ -78,6 +83,10 @@
           (if (and b (not (equal? (cdr b) t)))
               (raise-error/message (format "~S -><- ~S" (cdr b) t))
               (list (cons u t)))))
+
+  (define-method unify- [(t <crt-any-type>) u binding] '())
+
+  (define-method unify- [t (u <crt-any-type>) binding] '())
 
   (define-method unify- [t u binding]
     (raise-error/message (format "~S -><- ~S" t u))))

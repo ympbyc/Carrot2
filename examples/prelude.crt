@@ -1,4 +1,9 @@
 [
+ (synonym Bool (Fn a a a))
+
+ (= (true Bool) x y x)
+ (= (false Bool) x y y)
+
  (synonym Pair (lambda [a b] `(Fn (Fn ,a ,b c) c)))
 
  (= (pair a b (Pair a b))
@@ -10,13 +15,12 @@
  (= (snd (Pair a b) b)
     p (p (^ x y y)))
 
-
  (synonym List (lambda [a] `(Fn (Fn ,a xs c) c)))
 
  (= (cons a (List a) (List a))
     x xs f (f x xs))
 
- (= (nil (Fn a xs c) Kw) f :nil)
+ (= (nil Any) <nil>)
 
  (= (car (List a) a)
     xs (xs (^ y ys y)))
@@ -24,5 +28,16 @@
  (= (cdr (List a) (List a))
     xs (xs (^ y ys ys)))
 
- (= (main Num) (car (cons 1 (cons 2 nil))))
-]
+
+ (generic nil? a (Bool))
+ (= (nil? Any (Bool)) _ true)
+ (= (nil? a (Bool)) _ false)
+
+
+ (= (inf-stream Num (List Num)) x (cons x (inf-stream x)))
+
+ (= (main Num) (car (cdr (inf-stream 1))))
+
+ ;;failing
+ ;;(= (main Kw) (nil? nil :a :b))
+ ]

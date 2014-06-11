@@ -133,6 +133,7 @@
               (make <crt-composite-type>
                 :container (car x)
                 :content-types (map make-unknown-crt-type (cdr x)))]
+             [(eq? x 'Any) (make <crt-any-type>)]
              [else (make <crt-type-var> :id x)])]))
 
 
@@ -156,10 +157,11 @@
         :expr expr
         :type (cadr (assq expr params)))]
      [(symbol? expr)
-      (cond [(hash-table-get *function-heap* expr #f) => (^f f)]
+      (cond [(eq? expr '<nil>) (make-literal expr 'Any)]
+            [(hash-table-get *function-heap* expr #f) => (^f f)]
             [(member expr *generic-names*)
              (ref *gen-function-type-heap* expr)]   ;;generic fn
-            [else (make <crt-external-ref>
+            [else (make <crt-self-ref>
                     :expr expr
                     :type self-type)])]
      [(and (pair? expr) (eq? '^ (car expr)))
@@ -232,10 +234,10 @@
     (cond [(and (pair? t) (eq? 'lambda (car t)))
            (cons (eval t (interaction-environment)) syms)]  ;;polymorphic synonym
           [(pair? t)
-           (cons (cons (car t) (car (fold (fn [t acc]
-                                              (let1 x (uniquify-type-var t (cdr acc))
-                                                    (cons (cons (car x) (car acc))
-                                                          (cdr x))))
+           (cons (cons (car t) (car (fold (lambda [t acc]
+                                            (let1 x (uniquify-type-var t (cdr acc))
+                                                  (cons (cons (car x) (car acc))
+                                                        (cdr x))))
                                           '(() . ())
                                           (cdr t))))
                  syms)]
