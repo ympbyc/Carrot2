@@ -1,8 +1,8 @@
 [
  (synonym Bool (Fn a a a))
 
- (= (true Bool) x y x)
- (= (false Bool) x y y)
+ (= (true (Bool)) x y x)
+ (= (false (Bool)) x y y)
 
  (synonym Pair (lambda [a b] `(Fn (Fn ,a ,b c) c)))
 
@@ -33,11 +33,19 @@
  (= (nil? Any (Bool)) _ true)
  (= (nil? a (Bool)) _ false)
 
+ (= (+ Num Num Num)
+    x y (** _native_plus x y))
+
+(= (make-integers-from Num (List Num)) n
+   (cons n (make-integers-from (+ n 1))))
+(= (integers (List Num))
+   (make-integers-from 0))
 
  (= (inf-stream Num (List Num)) x (cons x (inf-stream x)))
 
- (= (main Num) (car (cdr (inf-stream 1))))
+ (= (main Num) (car (cdr (cdr integers))))
+
 
  ;;failing
- ;;(= (main Kw) (nil? nil :a :b))
+; (= (main Kw) (nil? nil :a :b))
  ]

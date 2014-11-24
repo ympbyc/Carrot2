@@ -1,3 +1,5 @@
+;;this definitely needs documentation and refactoring but seems to work
+
 (define-module read
   (export sexprs->carrot-expr)
   (use srfi-1)
@@ -166,6 +168,8 @@
                     :type self-type)])]
      [(and (pair? expr) (eq? '^ (car expr)))
       (make-lambda expr params self-type)]
+     [(and (pair? expr) (eq? '** (car expr)))
+      (make-ffi-expr (cdr expr) params self-type)]
      [(pair? expr)
       (make-app-expr expr params self-type)]))
 
@@ -189,14 +193,30 @@
     (let* ([arity    (get-arity (get-type gen-fn))]
            [operand-ts
             (map (compose get-type (cut make-expr <> params self-type))
-                 (take args arity))]
+                 ;(take args arity)
+                 args)]
            [method   (assoc operand-ts (get-methods gen-fn))])
+      ;;this assoc needs to be replaced with more sophisticated mathcer
+      (format #t "selecting a method for: ~S\n" (cons (get-name gen-fn) args))
+      (format #t "~S [ ~S ]\n" (get-methods gen-fn) operand-ts)
       (if method
           (make-expr (cons (cdr method) args) params self-type)
           (lambda [xs]
             ;;dispaatch on parametric type
             (select-method gen-fn xs params self-type)))))
 
+
+
+  (define (make-ffi-expr expr params self-type)
+    (let* ([foreign-f (car expr)]
+           [operand-exprs (map (lambda [x]
+                                 (make-expr x params self-type))
+                               (cdr expr))])
+      (make <crt-ffi>
+        :operator foreign-f
+        :operands operand-exprs
+        :expr     '()
+        :type     (get-return-type self-type))))
 
 
   (define (make-app-expr expr params self-type)

@@ -27,6 +27,9 @@
        (check-expr operator binding)
        (check-expr operand  binding))))
 
+  (define-method check-expr [(expr <crt-ffi>) binding]
+    #t)
+
   (define-method prim-match? [(t <crt-number-type>) (u <number>)] #t)
   (define-method prim-match? [(t <crt-string-type>) (u <string>)] #t)
   (define-method prim-match? [(t <crt-symbol-type>) (u <symbol>)] #t)
@@ -56,9 +59,14 @@
     ;;(format #t "~S ≡ ~S\n" t u)
     (filter identity (unify- t u binding)))
 
+  (define-method unify- [(t <crt-any-type>) u binding] '())
+
+  (define-method unify- [t (u <crt-any-type>) binding] '())
+
+
   (define-method unify- [(t <crt-primitive-type>) (u <crt-primitive-type>) _]
     (if (eq? (class-of t) (class-of u)) '()
-        (raise-error/message (format "~S -><- ~S" t u))))
+        (raise-error/message (format "PRIMITIVE MISMATCH: ~S -><- ~S" t u))))
 
   (define-method unify- [(t <crt-function-type>) (u <crt-function-type>) binding]
     (cons (unify (get-return-type t) (get-return-type u) binding)
@@ -69,24 +77,21 @@
     (let ([b1 (assoc t binding)]
           [b2 (assoc u binding)])
       (if (and b1 b2 (not (equal? (cdr b1) (cdr b2))))
-          (raise-error/message (format "~S -><- ~S" (cdr b1) (cdr b2)))
+          (raise-error/message
+           (format "TYPE VAR MISMATCH: ~S -><- ~S" (cdr b1) (cdr b2)))
           '())))
 
   (define-method unify- [(t <crt-type-var>) u binding]
     (let1 b (assoc t binding)
-          (if (and b (not (equal? (cdr b) u)))
-              (raise-error/message (format "~S -><- ~S" (cdr b) u))
+          (if (and b (not (unify (cdr b) u binding)))
+              (raise-error/message (format "AAA: ~S -><- ~S" (cdr b) u))
               (list (cons t u)))))
 
   (define-method unify- [t (u <crt-type-var>) binding]
     (let1 b (assoc u binding)
-          (if (and b (not (equal? (cdr b) t)))
-              (raise-error/message (format "~S -><- ~S" (cdr b) t))
+          (if (and b (not (unify (cdr b) t binding)))
+              (raise-error/message (format "BBB: ~S -><- ~S" (cdr b) t))
               (list (cons u t)))))
 
-  (define-method unify- [(t <crt-any-type>) u binding] '())
-
-  (define-method unify- [t (u <crt-any-type>) binding] '())
-
   (define-method unify- [t u binding]
-    (raise-error/message (format "~S -><- ~S" t u))))
+    (raise-error/message (format "CCC: ~S -><- ~S" t u))))

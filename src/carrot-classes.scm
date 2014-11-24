@@ -45,6 +45,12 @@
      [operand  :accessor get-operand
                :init-keyword :operand]))
 
+  (define-class <crt-ffi> (<crt-expr>)
+    ([operator :accessor get-operator
+               :init-keyword :operator]
+     [operands :accessor get-operands
+               :init-keyword :operands]))
+
   (define-class <crt-function> (<crt-expr>)
     ([name :accessor             get-name
            :init-value           'anonymous

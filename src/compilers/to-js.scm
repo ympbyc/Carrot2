@@ -7,7 +7,9 @@
 
   (define (compile heap)
     (set! *function-heap* heap)
-    (compile-expr (get-expr (ref heap 'main))))
+    (string-append
+     (compile-expr (get-expr (ref heap 'main)))
+     ";function _native_plus (x, y) { return x + y; }"))
 
 
   (define-method compile-expr [(expr <crt-function>)]
@@ -23,6 +25,14 @@
     (format "(~A)(~A)"
             (compile-expr (get-operator expr))
             (thunk (compile-expr (get-operand expr)))))
+
+  (define-method compile-expr [(expr <crt-ffi>)]
+    (format "~A(~A)"
+            (get-operator expr)
+            (fold (lambda [x str]
+                    (string-append str (if (zero? (string-length str)) "" ",") x))
+                  ""
+                  (map compile-expr (get-operands expr)))))
 
   (define-method compile-expr [(expr <crt-local-ref>)]
     (format "~A()" (to-valid-id (get-expr expr))))
